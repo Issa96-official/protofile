@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Inloggning - Demo</title>
+    <link rel="stylesheet" href="public/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Theme Toggle -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="Växla tema">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <div class="container">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <h1><i class="fas fa-lock"></i> Admin Panel</h1>
+                    <p>Demo - GitHub Pages Version</p>
+                </div>
+
+                <div class="demo-notice">
+                    <div class="notice-content">
+                        <i class="fas fa-info-circle"></i>
+                        <h3>Detta är en demo-version</h3>
+                        <p>Den fullständiga admin-panelen med inloggning och databashantering finns i Node.js-versionen av projektet.</p>
+                        <p><strong>Standard inloggning:</strong></p>
+                        <p>Användarnamn: admin<br>Lösenord: admin123</p>
+                    </div>
+                </div>
+
+                <div class="demo-buttons">
+                    <a href="index.html" class="btn btn-secondary">
+                        <i class="fas fa-home"></i> Tillbaka till startsida
+                    </a>
+                    <a href="https://github.com/Issa96-official/protofile" target="_blank" class="btn btn-primary">
+                        <i class="fab fa-github"></i> Se källkoden
+                    </a>
+                </div>
+
+                <div class="instructions">
+                    <h4>För att köra den fullständiga versionen:</h4>
+                    <div class="code-block">
+                        <code>
+                            git clone https://github.com/Issa96-official/protofile.git<br>
+                            cd protofile<br>
+                            npm install<br>
+                            npm start
+                        </code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Background Elements -->
+    <div class="bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="floating-elements">
+            <div class="floating-element"></div>
+            <div class="floating-element"></div>
+            <div class="floating-element"></div>
+        </div>
+    </div>
+
+    <script src="public/js/login.js"></script>
+</body>
+</html>

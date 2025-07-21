@@ -1107,3 +1107,89 @@ input[type="file"] {
         align-items: flex-start;
     }
 }
+
+/* Demo Notice Styles */
+.demo-notice {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.notice-content {
+    color: var(--text-color);
+}
+
+.notice-content i {
+    font-size: 2rem;
+    color: #ffc107;
+    margin-bottom: 10px;
+}
+
+.notice-content h3 {
+    margin: 10px 0;
+    color: var(--primary-color);
+}
+
+.demo-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.instructions {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.instructions h4 {
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.code-block {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+}
+
+.code-block code {
+    color: #00ff88;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
