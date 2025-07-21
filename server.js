@@ -98,11 +98,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Session konfiguration
 app.use(session({
-    secret: 'your-secret-key-change-this-in-production',
+    secret: process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production',
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false, // sätt till true för HTTPS
+        secure: process.env.NODE_ENV === 'production', // HTTPS för produktion
         maxAge: 24 * 60 * 60 * 1000 // 24 timmar
     }
 }));
@@ -351,8 +351,11 @@ app.post('/api/admin/change-password', requireAuth, [
 });
 
 // Starta servern
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server körs på port ${PORT}`);
-    console.log(`Huvudsida: http://localhost:${PORT}`);
-    console.log(`Admin-panel: http://localhost:${PORT}/admin`);
+    console.log(`Miljö: ${process.env.NODE_ENV || 'development'}`);
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(`Huvudsida: http://localhost:${PORT}`);
+        console.log(`Admin-panel: http://localhost:${PORT}/admin`);
+    }
 });

@@ -17,7 +17,7 @@ build/
 .env.production.local
 
 # Database files
-database.db
+# database.db (temporarily allow for initial deployment)
 *.db-journal
 *.sqlite
 *.sqlite3

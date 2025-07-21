@@ -132,7 +132,19 @@ Lösenord: admin123
 
 ## 🌐 Produktion
 
-### Säkerhetsinställningar
+### Deployment på Render.com (Rekommenderat)
+
+1. **Skapa konto** på [render.com](https://render.com)
+2. **"New Web Service"** → Koppla GitHub repository
+3. **Repository**: `Issa96-official/protofile`
+4. **Build Command**: `npm install`
+5. **Start Command**: `npm start`
+6. **Miljövariabler** (sätts automatiskt via render.yaml):
+   - `NODE_ENV=production`
+   - `SESSION_SECRET` (genereras automatiskt)
+7. **Deploy** - Klar på 2-3 minuter!
+
+### Lokala säkerhetsinställningar
 
 1. **Ändra session-hemlighet** i `server.js`:
    ```javascript
