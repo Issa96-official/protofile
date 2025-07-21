@@ -1,0 +1,22 @@
+{
+  "name": "social-media-links-website",
+  "version": "1.0.0",
+  "description": "En modern webbplats för att visa sociala mediekonton med admin-panel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": ["social-media", "admin-panel", "express", "sqlite", "responsive"],
+  "author": "Ägare",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "express-validator": "^7.2.1",
+    "multer": "^2.0.2",
+    "sqlite3": "^5.1.7"
+  }
+}

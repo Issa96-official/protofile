@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Dark mode toggle -->
+    <button class="theme-toggle" id="theme-toggle">
+        <i class="fas fa-moon" id="theme-icon"></i>
+        <span id="theme-text">Mörkt tema</span>
+    </button>
+
+    <div class="admin-container">
+        <!-- Sidhuvud -->
+        <header class="admin-header">
+            <div class="header-content">
+                <h1><i class="fas fa-cog"></i> Admin Panel</h1>
+                <div class="header-actions">
+                    <a href="/" class="btn btn-secondary" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Visa hemsida
+                    </a>
+                    <button id="logout-btn" class="btn btn-danger">
+                        <i class="fas fa-sign-out-alt"></i> Logga ut
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Huvudinnehåll -->
+        <main class="admin-main">
+            <!-- Navigeringsflikar -->
+            <nav class="admin-tabs">
+                <button class="tab-btn active" data-tab="profile">
+                    <i class="fas fa-user"></i> Profil
+                </button>
+                <button class="tab-btn" data-tab="social-links">
+                    <i class="fas fa-link"></i> Sociala Medier
+                </button>
+                <button class="tab-btn" data-tab="settings">
+                    <i class="fas fa-cog"></i> Inställningar
+                </button>
+            </nav>
+
+            <!-- Profilflik -->
+            <div id="profile-tab" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-user"></i> Redigera Profil</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="profile-form" class="form">
+                            <div class="form-group">
+                                <label for="profile-name">Namn</label>
+                                <input type="text" id="profile-name" name="name" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile-image-input">Profilbild</label>
+                                <div class="image-upload-container">
+                                    <div class="current-image">
+                                        <img id="current-profile-image" src="https://via.placeholder.com/100x100/667eea/ffffff?text=Profil" alt="Nuvarande profilbild">
+                                    </div>
+                                    <input type="file" id="profile-image-input" name="profile_image" accept="image/*">
+                                    <label for="profile-image-input" class="file-upload-btn">
+                                        <i class="fas fa-upload"></i> Välj ny bild
+                                    </label>
+                                </div>
+                                <small class="form-help">Max 5MB. Formater: JPG, PNG, GIF</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" id="save-profile-btn">
+                                <span class="btn-text">
+                                    <i class="fas fa-save"></i> Spara Profil
+                                </span>
+                                <span class="btn-spinner" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sociala medier-flik -->
+            <div id="social-links-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-link"></i> Hantera Sociala Medielänkar</h2>
+                        <button id="add-link-btn" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Lägg till länk
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Lista över sociala medielänkar -->
+                        <div id="social-links-list" class="social-links-list">
+                            <!-- Läses in dynamiskt -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inställningar-flik -->
+            <div id="settings-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-key"></i> Ändra Lösenord</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="password-form" class="form">
+                            <div class="form-group">
+                                <label for="current-password">Nuvarande lösenord</label>
+                                <input type="password" id="current-password" name="currentPassword" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="new-password">Nytt lösenord</label>
+                                <input type="password" id="new-password" name="newPassword" required minlength="6">
+                                <small class="form-help">Minst 6 tecken</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirm-password">Bekräfta nytt lösenord</label>
+                                <input type="password" id="confirm-password" name="confirmPassword" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-warning" id="change-password-btn">
+                                <span class="btn-text">
+                                    <i class="fas fa-key"></i> Ändra Lösenord
+                                </span>
+                                <span class="btn-spinner" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal för att lägga till/redigera social medielänk -->
+    <div id="social-link-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Lägg till Social Medielänk</h3>
+                <button class="modal-close" id="close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="social-link-form" class="form">
+                    <input type="hidden" id="link-id" name="id">
+                    
+                    <div class="form-group">
+                        <label for="platform">Plattform</label>
+                        <select id="platform" name="platform" required>
+                            <option value="">Välj plattform</option>
+                            <option value="Facebook">Facebook</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="Twitter">Twitter</option>
+                            <option value="LinkedIn">LinkedIn</option>
+                            <option value="YouTube">YouTube</option>
+                            <option value="TikTok">TikTok</option>
+                            <option value="GitHub">GitHub</option>
+                            <option value="Website">Webbplats</option>
+                            <option value="Email">E-post</option>
+                            <option value="Other">Annat</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="url">URL</label>
+                        <input type="url" id="url" name="url" required placeholder="https://exempel.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="icon-class">Ikon-klass (Font Awesome)</label>
+                        <input type="text" id="icon-class" name="icon_class" placeholder="fab fa-facebook">
+                        <small class="form-help">T.ex. "fab fa-facebook", "fab fa-instagram", "fas fa-globe"</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="display-order">Visningsordning</label>
+                        <input type="number" id="display-order" name="display_order" value="0" min="0">
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="is-active" name="is_active" checked>
+                            <span class="checkmark"></span>
+                            Aktiv (visas på hemsidan)
+                        </label>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-modal">Avbryt</button>
+                        <button type="submit" class="btn btn-primary" id="save-link-btn">
+                            <span class="btn-text">Spara</span>
+                            <span class="btn-spinner" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifiering -->
+    <div id="notification" class="notification" style="display: none;">
+        <div class="notification-content">
+            <i class="notification-icon"></i>
+            <span class="notification-message"></span>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>

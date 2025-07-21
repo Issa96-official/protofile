@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sociala Medier - Profil</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Dark mode toggle -->
+    <button class="theme-toggle" id="theme-toggle">
+        <i class="fas fa-moon" id="theme-icon"></i>
+        <span id="theme-text">Mörkt tema</span>
+    </button>
+
+    <div class="container">
+        <div class="profile-card">
+            <!-- Profilsektion -->
+            <div class="profile-section">
+                <div class="profile-image-container">
+                    <img id="profile-image" src="https://via.placeholder.com/150x150/667eea/ffffff?text=Profil" alt="Profilbild" class="profile-image">
+                </div>
+                <h1 id="profile-name" class="profile-name">Laddar...</h1>
+            </div>
+
+            <!-- Sociala medielänkar -->
+            <div class="social-links-section">
+                <h2 class="section-title">Följ mig på sociala medier</h2>
+                <div id="social-links" class="social-links">
+                    <!-- Länkar läses in dynamiskt -->
+                </div>
+            </div>
+
+            <!-- Admin-länk -->
+            <div class="admin-link-section">
+                <a href="/admin" class="admin-link">
+                    <i class="fas fa-cog"></i> Admin
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Laddningsindikator -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Laddar profil...</p>
+    </div>
+
+    <!-- Felmeddelande -->
+    <div id="error-message" class="error-message" style="display: none;">
+        <p>Något gick fel vid laddning av profilen. Försök igen senare.</p>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
