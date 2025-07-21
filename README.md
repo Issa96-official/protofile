@@ -41,8 +41,8 @@ En modern och responsiv webbplats för att visa dina sociala mediekonton med en 
 
 1. **Klona repository**:
    ```bash
-   git clone https://github.com/DITT-ANVÄNDARNAMN/sociala-medier-webbplats.git
-   cd sociala-medier-webbplats
+   git clone https://github.com/Issa96-official/protofile.git
+   cd protofile
    ```
 
 2. **Installera dependencies**:
