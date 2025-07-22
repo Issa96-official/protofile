@@ -102,7 +102,8 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: process.env.NODE_ENV === 'production', // HTTPS för produktion
+        secure: false, // Temporary fix for Render - change to true when HTTPS is properly configured
+        httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000 // 24 timmar
     }
 }));
@@ -125,9 +126,14 @@ app.get('/', (req, res) => {
 
 // Admin-inloggningssida
 app.get('/admin', (req, res) => {
+    console.log('Admin route accessed, session user:', req.session.user); // Debug
+    console.log('Session ID:', req.sessionID); // Debug
+    
     if (req.session.user) {
+        console.log('User authenticated, serving admin.html'); // Debug
         res.sendFile(path.join(__dirname, 'public', 'admin.html'));
     } else {
+        console.log('User not authenticated, serving login.html'); // Debug
         res.sendFile(path.join(__dirname, 'public', 'login.html'));
     }
 });
@@ -179,12 +185,34 @@ app.post('/api/login', [
             }
 
             if (result) {
+                console.log('Password match, creating session for user:', user.username); // Debug
                 req.session.user = { id: user.id, username: user.username };
-                res.json({ success: true, message: 'Inloggning lyckades' });
+                console.log('Session created, session ID:', req.sessionID); // Debug
+                console.log('Session user after creation:', req.session.user); // Debug
+                
+                // Force session save
+                req.session.save((err) => {
+                    if (err) {
+                        console.error('Session save error:', err);
+                        return res.status(500).json({ error: 'Session kunde inte sparas' });
+                    }
+                    console.log('Session saved successfully'); // Debug
+                    res.json({ success: true, message: 'Inloggning lyckades' });
+                });
             } else {
                 res.status(401).json({ error: 'Ogiltigt användarnamn eller lösenord' });
             }
         });
+    });
+});
+
+// Session status API
+app.get('/api/session-status', (req, res) => {
+    console.log('Session status check, user:', req.session.user);
+    res.json({ 
+        authenticated: !!req.session.user,
+        user: req.session.user || null,
+        sessionID: req.sessionID
     });
 });
 

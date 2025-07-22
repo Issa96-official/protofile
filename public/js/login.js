@@ -91,24 +91,28 @@ async function handleLogin(e) {
         
         if (response.ok) {
             // Inloggning lyckades
-            console.log('Login successful, redirecting to admin...'); // Debug
-            showSuccess('Inloggning lyckades! Omdirigerar...');
+            console.log('Login successful, checking session...'); // Debug
+            showSuccess('Inloggning lyckades! Kontrollerar session...');
             
-            // Lägg till lite extra debug-info
-            console.log('Current URL:', window.location.href);
-            console.log('Attempting redirect to /admin');
-            
-            // Omdirigera direkt utan timeout
-            try {
-                // Försök direkt omdirigering först
-                window.location.href = '/admin';
-            } catch (e) {
-                console.error('Direct redirect failed, trying with timeout:', e);
-                // Om det misslyckas, försök med timeout
-                setTimeout(() => {
-                    window.location.replace('/admin');
-                }, 100);
-            }
+            // Kontrollera session-status innan omdirigering
+            setTimeout(async () => {
+                try {
+                    const sessionCheck = await fetch('/api/session-status');
+                    const sessionData = await sessionCheck.json();
+                    console.log('Session status:', sessionData);
+                    
+                    if (sessionData.authenticated) {
+                        console.log('Session confirmed, redirecting to admin...');
+                        window.location.href = '/admin';
+                    } else {
+                        console.error('Session not confirmed, showing manual link');
+                        showSuccess('Inloggning lyckades men session är inte aktiv. Klicka länken nedan.');
+                    }
+                } catch (e) {
+                    console.error('Session check failed:', e);
+                    window.location.href = '/admin';
+                }
+            }, 500);
             
         } else {
             // Inloggning misslyckades
