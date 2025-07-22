@@ -809,6 +809,17 @@ input[type="file"] {
     min-width: auto;
 }
 
+.btn-mobile {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    min-width: 80px;
+    min-height: 44px; /* Touch-friendly storlek */
+}
+
+.btn-mobile .mobile-text {
+    display: none; /* Dölj text på desktop */
+}
+
 /* Modal */
 .modal {
     display: none;
@@ -1074,6 +1085,19 @@ input[type="file"] {
     .social-link-actions {
         width: 100%;
         justify-content: flex-end;
+        gap: 15px; /* Mer avstånd mellan knapparna på mobil */
+    }
+    
+    .btn-mobile {
+        padding: 14px 18px;
+        font-size: 1rem;
+        min-width: 90px;
+        min-height: 48px; /* Större touch-area på mobil */
+        border-radius: 12px;
+    }
+    
+    .btn-mobile .mobile-text {
+        display: inline; /* Visa text på mobil */
     }
     
     .modal-actions {

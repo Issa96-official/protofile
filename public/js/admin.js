@@ -173,11 +173,13 @@ function displaySocialLinks(links) {
                 </div>
             </div>
             <div class="social-link-actions">
-                <button class="btn btn-primary btn-small" onclick="editSocialLink(${link.id})">
-                    <i class="fas fa-edit"></i> Redigera
+                <button class="btn btn-primary btn-mobile" onclick="editSocialLink(${link.id})" title="Redigera ${link.platform}">
+                    <i class="fas fa-edit"></i>
+                    <span class="btn-text-mobile">Redigera</span>
                 </button>
-                <button class="btn btn-danger btn-small" onclick="deleteSocialLink(${link.id})">
-                    <i class="fas fa-trash"></i> Ta bort
+                <button class="btn btn-danger btn-mobile" onclick="deleteSocialLink(${link.id})" title="Ta bort ${link.platform}">
+                    <i class="fas fa-trash"></i>
+                    <span class="btn-text-mobile">Ta bort</span>
                 </button>
             </div>
         </div>
@@ -318,12 +320,18 @@ async function handleSocialLinkSave(e) {
 }
 
 async function editSocialLink(id) {
+    console.log('Attempting to edit link with ID:', id); // Debug
     try {
         const response = await fetch('/api/admin/social-links');
+        console.log('Fetch response status:', response.status); // Debug
+        
         if (!response.ok) throw new Error('Fel vid hämtning av länkdata');
         
         const links = await response.json();
+        console.log('All links:', links); // Debug
+        
         const link = links.find(l => l.id === id);
+        console.log('Found link:', link); // Debug
         
         if (link) {
             openSocialLinkModal(link);
