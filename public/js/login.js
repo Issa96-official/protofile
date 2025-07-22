@@ -94,15 +94,21 @@ async function handleLogin(e) {
             console.log('Login successful, redirecting to admin...'); // Debug
             showSuccess('Inloggning lyckades! Omdirigerar...');
             
-            // Försök flera metoder för omdirigering
-            setTimeout(() => {
-                try {
+            // Lägg till lite extra debug-info
+            console.log('Current URL:', window.location.href);
+            console.log('Attempting redirect to /admin');
+            
+            // Omdirigera direkt utan timeout
+            try {
+                // Försök direkt omdirigering först
+                window.location.href = '/admin';
+            } catch (e) {
+                console.error('Direct redirect failed, trying with timeout:', e);
+                // Om det misslyckas, försök med timeout
+                setTimeout(() => {
                     window.location.replace('/admin');
-                } catch (e) {
-                    console.error('Replace failed, trying href:', e);
-                    window.location.href = '/admin';
-                }
-            }, 500);
+                }, 100);
+            }
             
         } else {
             // Inloggning misslyckades
@@ -138,7 +144,13 @@ function hideError() {
 
 function showSuccess(message) {
     const errorMessage = document.getElementById('error-message');
-    errorMessage.textContent = message;
+    errorMessage.innerHTML = `
+        ${message}
+        <br><br>
+        <a href="/admin" style="color: #155724; text-decoration: underline; font-weight: bold;">
+            Klicka här om du inte omdirigeras automatiskt →
+        </a>
+    `;
     errorMessage.style.display = 'block';
     errorMessage.style.background = '#d4edda';
     errorMessage.style.color = '#155724';
