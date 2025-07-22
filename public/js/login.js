@@ -91,12 +91,18 @@ async function handleLogin(e) {
         
         if (response.ok) {
             // Inloggning lyckades
+            console.log('Login successful, redirecting to admin...'); // Debug
             showSuccess('Inloggning lyckades! Omdirigerar...');
             
-            // Omdirigera efter kort fördröjning
+            // Försök flera metoder för omdirigering
             setTimeout(() => {
-                window.location.href = '/admin';
-            }, 1000);
+                try {
+                    window.location.replace('/admin');
+                } catch (e) {
+                    console.error('Replace failed, trying href:', e);
+                    window.location.href = '/admin';
+                }
+            }, 500);
             
         } else {
             // Inloggning misslyckades
