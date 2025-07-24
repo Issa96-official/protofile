@@ -113,6 +113,14 @@ app.get('/admin', (req, res) => {
 
 // API för att hämta profildata
 app.get('/api/profile', async (req, res) => {
+    // Fallback om ingen databas finns
+    if (!process.env.DATABASE_URL) {
+        return res.json({
+            profile: { name: 'Ägare', profile_image: null },
+            social_links: []
+        });
+    }
+
     try {
         const userResult = await pool.query("SELECT name, profile_image FROM users WHERE id = 1");
         const user = userResult.rows[0];
@@ -126,7 +134,11 @@ app.get('/api/profile', async (req, res) => {
         });
     } catch (error) {
         console.error('Databasfel:', error);
-        res.status(500).json({ error: 'Databasfel' });
+        // Fallback vid databasfel
+        res.json({
+            profile: { name: 'Ägare', profile_image: null },
+            social_links: []
+        });
     }
 });
 
@@ -138,6 +150,25 @@ app.post('/api/login', [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
+    }
+
+    // Om ingen databas finns, använd demo-inloggning
+    if (!process.env.DATABASE_URL) {
+        const { username, password } = req.body;
+        
+        if (username === 'admin' && password === 'admin123') {
+            req.session.user = { id: 1, username: 'admin' };
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Session save error:', err);
+                    return res.status(500).json({ error: 'Session kunde inte sparas' });
+                }
+                res.json({ success: true, message: 'Demo inloggning lyckades' });
+            });
+        } else {
+            res.status(401).json({ error: 'Demo: Använd admin / admin123' });
+        }
+        return;
     }
 
     const { username, password } = req.body;
@@ -182,7 +213,8 @@ app.get('/api/session-status', (req, res) => {
     res.json({ 
         authenticated: !!req.session.user,
         user: req.session.user || null,
-        sessionID: req.sessionID
+        sessionID: req.sessionID,
+        demo_mode: !process.env.DATABASE_URL // Lägg till demo-läge flagga
     });
 });
 
@@ -198,13 +230,18 @@ app.post('/api/logout', (req, res) => {
 
 // API för att hämta admin-data
 app.get('/api/admin/profile', requireAuth, async (req, res) => {
+    // Fallback om ingen databas finns
+    if (!process.env.DATABASE_URL) {
+        return res.json({ name: 'Demo Ägare', profile_image: null });
+    }
+
     try {
         const result = await pool.query("SELECT name, profile_image FROM users WHERE id = $1", [req.session.user.id]);
         const user = result.rows[0];
-        res.json(user);
+        res.json(user || { name: 'Ägare', profile_image: null });
     } catch (error) {
         console.error('Databasfel:', error);
-        res.status(500).json({ error: 'Databasfel' });
+        res.json({ name: 'Ägare', profile_image: null });
     }
 });
 
@@ -215,6 +252,11 @@ app.post('/api/admin/profile', requireAuth, upload.single('profile_image'), [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
+    }
+
+    // Fallback om ingen databas finns
+    if (!process.env.DATABASE_URL) {
+        return res.status(503).json({ error: 'Demo-läge: Databas krävs för att spara ändringar. Konfigurera DATABASE_URL.' });
     }
 
     const { name } = req.body;
@@ -244,12 +286,17 @@ app.post('/api/admin/profile', requireAuth, upload.single('profile_image'), [
 
 // API för att hämta sociala medielänkar för admin
 app.get('/api/admin/social-links', requireAuth, async (req, res) => {
+    // Fallback om ingen databas finns
+    if (!process.env.DATABASE_URL) {
+        return res.json([]);
+    }
+
     try {
         const result = await pool.query("SELECT * FROM social_links ORDER BY display_order");
         res.json(result.rows);
     } catch (error) {
         console.error('Databasfel:', error);
-        res.status(500).json({ error: 'Databasfel' });
+        res.json([]);
     }
 });
 
@@ -262,6 +309,11 @@ app.post('/api/admin/social-links', requireAuth, [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
+    }
+
+    // Fallback om ingen databas finns
+    if (!process.env.DATABASE_URL) {
+        return res.status(503).json({ error: 'Demo-läge: Databas krävs för att spara ändringar. Konfigurera DATABASE_URL.' });
     }
 
     const { platform, url, icon_class, display_order = 0 } = req.body;
