@@ -16,8 +16,24 @@ const { pool, initializeDatabase, testConnection } = require('./config/database'
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialisera databas
-initializeDatabase().catch(console.error);
+// Initialisera databas endast om DATABASE_URL finns
+const initDB = async () => {
+    if (process.env.DATABASE_URL) {
+        try {
+            await initializeDatabase();
+            console.log('✅ Databas initialiserad');
+        } catch (error) {
+            console.error('❌ Databas initialiseringsfel:', error);
+            if (process.env.NODE_ENV === 'production') {
+                throw error;
+            }
+        }
+    } else {
+        console.log('⚠️  Ingen DATABASE_URL - hoppar över databas initialisering');
+    }
+};
+
+initDB().catch(console.error);
 
 // Multer konfiguration för filuppladdning
 const storage = multer.diskStorage({
@@ -336,26 +352,55 @@ app.post('/api/admin/change-password', requireAuth, [
 // Starta servern
 const startServer = async () => {
     try {
-        // Testa databasanslutning
-        const connected = await testConnection();
-        if (!connected) {
-            console.error('Kunde inte ansluta till databasen. Servern startar inte.');
-            process.exit(1);
+        // För Render - endast testa anslutning om DATABASE_URL finns
+        if (process.env.DATABASE_URL) {
+            console.log('DATABASE_URL hittad, testar PostgreSQL-anslutning...');
+            const connected = await testConnection();
+            if (!connected) {
+                console.error('⚠️  Varning: Kunde inte ansluta till PostgreSQL. Kontrollera DATABASE_URL.');
+                console.log('💡 Skapa en PostgreSQL-databas i Render Dashboard först!');
+                
+                // I produktion, avsluta om ingen databas
+                if (process.env.NODE_ENV === 'production') {
+                    console.error('🚫 Servern kan inte starta utan databas i produktion.');
+                    process.exit(1);
+                }
+            } else {
+                console.log('✅ PostgreSQL anslutning lyckades');
+            }
+        } else {
+            console.log('⚠️  Ingen DATABASE_URL hittad. Kör utan databas för tillfället.');
+            console.log('💡 Lägg till DATABASE_URL i environment variables för att aktivera databas.');
         }
 
         app.listen(PORT, '0.0.0.0', () => {
-            console.log(`Server körs på port ${PORT}`);
-            console.log(`Miljö: ${process.env.NODE_ENV || 'development'}`);
-            console.log('PostgreSQL databas ansluten');
+            console.log(`🚀 Server körs på port ${PORT}`);
+            console.log(`🌍 Miljö: ${process.env.NODE_ENV || 'development'}`);
+            
+            if (process.env.DATABASE_URL) {
+                console.log('🗄️  PostgreSQL databas ansluten');
+            } else {
+                console.log('⚠️  Kör utan databas - lägg till DATABASE_URL');
+            }
             
             if (process.env.NODE_ENV !== 'production') {
-                console.log(`Huvudsida: http://localhost:${PORT}`);
-                console.log(`Admin-panel: http://localhost:${PORT}/admin`);
+                console.log(`🏠 Huvudsida: http://localhost:${PORT}`);
+                console.log(`🔐 Admin-panel: http://localhost:${PORT}/admin`);
             }
         });
     } catch (error) {
-        console.error('Fel vid serverstart:', error);
-        process.exit(1);
+        console.error('❌ Fel vid serverstart:', error);
+        
+        // I development, försök starta ändå
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('🔄 Försöker starta servern utan databas (development mode)...');
+            app.listen(PORT, '0.0.0.0', () => {
+                console.log(`⚠️  Server körs på port ${PORT} UTAN DATABAS`);
+                console.log('💡 Konfigurera DATABASE_URL för full funktionalitet');
+            });
+        } else {
+            process.exit(1);
+        }
     }
 };
 

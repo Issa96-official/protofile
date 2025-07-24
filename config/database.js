@@ -1,10 +1,27 @@
 const { Pool } = require('pg');
 
 // Databas konfiguration
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/social_media_db',
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+const getDatabaseConfig = () => {
+    // För Render, använd DATABASE_URL om det finns
+    if (process.env.DATABASE_URL) {
+        return {
+            connectionString: process.env.DATABASE_URL,
+            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        };
+    }
+    
+    // Fallback för lokal utveckling
+    return {
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT || 5432,
+        database: process.env.DB_NAME || 'social_media_db',
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD || 'password',
+        ssl: false
+    };
+};
+
+const pool = new Pool(getDatabaseConfig());
 
 // Skapa tabeller om de inte finns
 const initializeDatabase = async () => {
