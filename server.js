@@ -1,66 +1,23 @@
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const { body, validationResult } = require('express-validator');
 const fs = require('fs');
 
+// Ladda environment variables för development
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config();
+}
+
+const { pool, initializeDatabase, testConnection } = require('./config/database');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Databaskonfiguration
-const db = new sqlite3.Database('./database.db');
-
-// Skapa tabeller om de inte finns
-db.serialize(() => {
-    // Användartabell för admin
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        name TEXT,
-        profile_image TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    // Tabell för sociala medielänkar
-    db.run(`CREATE TABLE IF NOT EXISTS social_links (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        platform TEXT NOT NULL,
-        url TEXT NOT NULL,
-        icon_class TEXT,
-        display_order INTEGER DEFAULT 0,
-        is_active BOOLEAN DEFAULT 1,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    // Skapa standardanvändare om ingen finns
-    db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
-        if (err) {
-            console.error('Databasfel:', err);
-            return;
-        }
-        if (row.count === 0) {
-            const defaultPassword = 'admin123';
-            bcrypt.hash(defaultPassword, 10, (err, hash) => {
-                if (err) {
-                    console.error('Fel vid hashning av lösenord:', err);
-                    return;
-                }
-                db.run("INSERT INTO users (username, password, name) VALUES (?, ?, ?)", 
-                    ['admin', hash, 'Ägare'], (err) => {
-                    if (err) {
-                        console.error('Fel vid skapande av standardanvändare:', err);
-                    } else {
-                        console.log('Standardanvändare skapad: admin / admin123');
-                    }
-                });
-            });
-        }
-    });
-});
+// Initialisera databas
+initializeDatabase().catch(console.error);
 
 // Multer konfiguration för filuppladdning
 const storage = multer.diskStorage({
@@ -139,30 +96,29 @@ app.get('/admin', (req, res) => {
 });
 
 // API för att hämta profildata
-app.get('/api/profile', (req, res) => {
-    db.get("SELECT name, profile_image FROM users WHERE id = 1", (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: 'Databasfel' });
-        }
+app.get('/api/profile', async (req, res) => {
+    try {
+        const userResult = await pool.query("SELECT name, profile_image FROM users WHERE id = 1");
+        const user = userResult.rows[0];
         
-        db.all("SELECT * FROM social_links WHERE is_active = 1 ORDER BY display_order", (err, links) => {
-            if (err) {
-                return res.status(500).json({ error: 'Databasfel' });
-            }
-            
-            res.json({
-                profile: user || { name: 'Ägare', profile_image: null },
-                social_links: links
-            });
+        const linksResult = await pool.query("SELECT * FROM social_links WHERE is_active = true ORDER BY display_order");
+        const links = linksResult.rows;
+        
+        res.json({
+            profile: user || { name: 'Ägare', profile_image: null },
+            social_links: links
         });
-    });
+    } catch (error) {
+        console.error('Databasfel:', error);
+        res.status(500).json({ error: 'Databasfel' });
+    }
 });
 
 // Login API
 app.post('/api/login', [
     body('username').notEmpty().withMessage('Användarnamn krävs'),
     body('password').notEmpty().withMessage('Lösenord krävs')
-], (req, res) => {
+], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -170,40 +126,38 @@ app.post('/api/login', [
 
     const { username, password } = req.body;
 
-    db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: 'Databasfel' });
-        }
+    try {
+        const result = await pool.query("SELECT * FROM users WHERE username = $1", [username]);
+        const user = result.rows[0];
 
         if (!user) {
             return res.status(401).json({ error: 'Ogiltigt användarnamn eller lösenord' });
         }
 
-        bcrypt.compare(password, user.password, (err, result) => {
-            if (err) {
-                return res.status(500).json({ error: 'Serverfel' });
-            }
-
-            if (result) {
-                console.log('Password match, creating session for user:', user.username); // Debug
-                req.session.user = { id: user.id, username: user.username };
-                console.log('Session created, session ID:', req.sessionID); // Debug
-                console.log('Session user after creation:', req.session.user); // Debug
-                
-                // Force session save
-                req.session.save((err) => {
-                    if (err) {
-                        console.error('Session save error:', err);
-                        return res.status(500).json({ error: 'Session kunde inte sparas' });
-                    }
-                    console.log('Session saved successfully'); // Debug
-                    res.json({ success: true, message: 'Inloggning lyckades' });
-                });
-            } else {
-                res.status(401).json({ error: 'Ogiltigt användarnamn eller lösenord' });
-            }
-        });
-    });
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        
+        if (passwordMatch) {
+            console.log('Password match, creating session for user:', user.username); // Debug
+            req.session.user = { id: user.id, username: user.username };
+            console.log('Session created, session ID:', req.sessionID); // Debug
+            console.log('Session user after creation:', req.session.user); // Debug
+            
+            // Force session save
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Session save error:', err);
+                    return res.status(500).json({ error: 'Session kunde inte sparas' });
+                }
+                console.log('Session saved successfully'); // Debug
+                res.json({ success: true, message: 'Inloggning lyckades' });
+            });
+        } else {
+            res.status(401).json({ error: 'Ogiltigt användarnamn eller lösenord' });
+        }
+    } catch (error) {
+        console.error('Databasfel:', error);
+        res.status(500).json({ error: 'Databasfel' });
+    }
 });
 
 // Session status API
@@ -227,19 +181,21 @@ app.post('/api/logout', (req, res) => {
 });
 
 // API för att hämta admin-data
-app.get('/api/admin/profile', requireAuth, (req, res) => {
-    db.get("SELECT name, profile_image FROM users WHERE id = ?", [req.session.user.id], (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: 'Databasfel' });
-        }
+app.get('/api/admin/profile', requireAuth, async (req, res) => {
+    try {
+        const result = await pool.query("SELECT name, profile_image FROM users WHERE id = $1", [req.session.user.id]);
+        const user = result.rows[0];
         res.json(user);
-    });
+    } catch (error) {
+        console.error('Databasfel:', error);
+        res.status(500).json({ error: 'Databasfel' });
+    }
 });
 
 // API för att uppdatera profil
 app.post('/api/admin/profile', requireAuth, upload.single('profile_image'), [
     body('name').notEmpty().withMessage('Namn krävs').isLength({ max: 100 }).withMessage('Namn får vara max 100 tecken')
-], (req, res) => {
+], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -252,31 +208,33 @@ app.post('/api/admin/profile', requireAuth, upload.single('profile_image'), [
         profileImage = '/uploads/' + req.file.filename;
     }
 
-    let query, params;
-    if (profileImage) {
-        query = "UPDATE users SET name = ?, profile_image = ? WHERE id = ?";
-        params = [name, profileImage, req.session.user.id];
-    } else {
-        query = "UPDATE users SET name = ? WHERE id = ?";
-        params = [name, req.session.user.id];
-    }
-
-    db.run(query, params, (err) => {
-        if (err) {
-            return res.status(500).json({ error: 'Databasfel' });
+    try {
+        let query, params;
+        if (profileImage) {
+            query = "UPDATE users SET name = $1, profile_image = $2 WHERE id = $3";
+            params = [name, profileImage, req.session.user.id];
+        } else {
+            query = "UPDATE users SET name = $1 WHERE id = $2";
+            params = [name, req.session.user.id];
         }
+
+        await pool.query(query, params);
         res.json({ success: true, message: 'Profil uppdaterad' });
-    });
+    } catch (error) {
+        console.error('Databasfel:', error);
+        res.status(500).json({ error: 'Databasfel' });
+    }
 });
 
 // API för att hämta sociala medielänkar för admin
-app.get('/api/admin/social-links', requireAuth, (req, res) => {
-    db.all("SELECT * FROM social_links ORDER BY display_order", (err, links) => {
-        if (err) {
-            return res.status(500).json({ error: 'Databasfel' });
-        }
-        res.json(links);
-    });
+app.get('/api/admin/social-links', requireAuth, async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM social_links ORDER BY display_order");
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Databasfel:', error);
+        res.status(500).json({ error: 'Databasfel' });
+    }
 });
 
 // API för att lägga till social medielänk
@@ -284,7 +242,7 @@ app.post('/api/admin/social-links', requireAuth, [
     body('platform').notEmpty().withMessage('Plattform krävs').isLength({ max: 50 }).withMessage('Plattform får vara max 50 tecken'),
     body('url').isURL().withMessage('Giltig URL krävs'),
     body('icon_class').optional().isLength({ max: 50 }).withMessage('Ikon-klass får vara max 50 tecken')
-], (req, res) => {
+], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -292,13 +250,16 @@ app.post('/api/admin/social-links', requireAuth, [
 
     const { platform, url, icon_class, display_order = 0 } = req.body;
 
-    db.run("INSERT INTO social_links (platform, url, icon_class, display_order) VALUES (?, ?, ?, ?)",
-        [platform, url, icon_class, display_order], function(err) {
-        if (err) {
-            return res.status(500).json({ error: 'Databasfel' });
-        }
-        res.json({ success: true, id: this.lastID, message: 'Social medielänk tillagd' });
-    });
+    try {
+        const result = await pool.query(
+            "INSERT INTO social_links (platform, url, icon_class, display_order) VALUES ($1, $2, $3, $4) RETURNING id",
+            [platform, url, icon_class, display_order]
+        );
+        res.json({ success: true, id: result.rows[0].id, message: 'Social medielänk tillagd' });
+    } catch (error) {
+        console.error('Databasfel:', error);
+        res.status(500).json({ error: 'Databasfel' });
+    }
 });
 
 // API för att uppdatera social medielänk
@@ -306,7 +267,7 @@ app.put('/api/admin/social-links/:id', requireAuth, [
     body('platform').notEmpty().withMessage('Plattform krävs').isLength({ max: 50 }).withMessage('Plattform får vara max 50 tecken'),
     body('url').isURL().withMessage('Giltig URL krävs'),
     body('icon_class').optional().isLength({ max: 50 }).withMessage('Ikon-klass får vara max 50 tecken')
-], (req, res) => {
+], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -315,32 +276,36 @@ app.put('/api/admin/social-links/:id', requireAuth, [
     const { id } = req.params;
     const { platform, url, icon_class, display_order, is_active } = req.body;
 
-    db.run("UPDATE social_links SET platform = ?, url = ?, icon_class = ?, display_order = ?, is_active = ? WHERE id = ?",
-        [platform, url, icon_class, display_order, is_active ? 1 : 0, id], (err) => {
-        if (err) {
-            return res.status(500).json({ error: 'Databasfel' });
-        }
+    try {
+        await pool.query(
+            "UPDATE social_links SET platform = $1, url = $2, icon_class = $3, display_order = $4, is_active = $5 WHERE id = $6",
+            [platform, url, icon_class, display_order, is_active, id]
+        );
         res.json({ success: true, message: 'Social medielänk uppdaterad' });
-    });
+    } catch (error) {
+        console.error('Databasfel:', error);
+        res.status(500).json({ error: 'Databasfel' });
+    }
 });
 
 // API för att ta bort social medielänk
-app.delete('/api/admin/social-links/:id', requireAuth, (req, res) => {
+app.delete('/api/admin/social-links/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
 
-    db.run("DELETE FROM social_links WHERE id = ?", [id], (err) => {
-        if (err) {
-            return res.status(500).json({ error: 'Databasfel' });
-        }
+    try {
+        await pool.query("DELETE FROM social_links WHERE id = $1", [id]);
         res.json({ success: true, message: 'Social medielänk borttagen' });
-    });
+    } catch (error) {
+        console.error('Databasfel:', error);
+        res.status(500).json({ error: 'Databasfel' });
+    }
 });
 
 // API för att ändra lösenord
 app.post('/api/admin/change-password', requireAuth, [
     body('currentPassword').notEmpty().withMessage('Nuvarande lösenord krävs'),
     body('newPassword').isLength({ min: 6 }).withMessage('Nytt lösenord måste vara minst 6 tecken')
-], (req, res) => {
+], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -348,42 +313,50 @@ app.post('/api/admin/change-password', requireAuth, [
 
     const { currentPassword, newPassword } = req.body;
 
-    db.get("SELECT password FROM users WHERE id = ?", [req.session.user.id], (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: 'Databasfel' });
+    try {
+        const result = await pool.query("SELECT password FROM users WHERE id = $1", [req.session.user.id]);
+        const user = result.rows[0];
+
+        const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+        
+        if (!passwordMatch) {
+            return res.status(401).json({ error: 'Nuvarande lösenord är felaktigt' });
         }
 
-        bcrypt.compare(currentPassword, user.password, (err, result) => {
-            if (err) {
-                return res.status(500).json({ error: 'Serverfel' });
-            }
-
-            if (!result) {
-                return res.status(401).json({ error: 'Nuvarande lösenord är felaktigt' });
-            }
-
-            bcrypt.hash(newPassword, 10, (err, hash) => {
-                if (err) {
-                    return res.status(500).json({ error: 'Serverfel' });
-                }
-
-                db.run("UPDATE users SET password = ? WHERE id = ?", [hash, req.session.user.id], (err) => {
-                    if (err) {
-                        return res.status(500).json({ error: 'Databasfel' });
-                    }
-                    res.json({ success: true, message: 'Lösenord ändrat' });
-                });
-            });
-        });
-    });
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await pool.query("UPDATE users SET password = $1 WHERE id = $2", [hashedPassword, req.session.user.id]);
+        
+        res.json({ success: true, message: 'Lösenord ändrat' });
+    } catch (error) {
+        console.error('Databasfel:', error);
+        res.status(500).json({ error: 'Databasfel' });
+    }
 });
 
 // Starta servern
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server körs på port ${PORT}`);
-    console.log(`Miljö: ${process.env.NODE_ENV || 'development'}`);
-    if (process.env.NODE_ENV !== 'production') {
-        console.log(`Huvudsida: http://localhost:${PORT}`);
-        console.log(`Admin-panel: http://localhost:${PORT}/admin`);
+const startServer = async () => {
+    try {
+        // Testa databasanslutning
+        const connected = await testConnection();
+        if (!connected) {
+            console.error('Kunde inte ansluta till databasen. Servern startar inte.');
+            process.exit(1);
+        }
+
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`Server körs på port ${PORT}`);
+            console.log(`Miljö: ${process.env.NODE_ENV || 'development'}`);
+            console.log('PostgreSQL databas ansluten');
+            
+            if (process.env.NODE_ENV !== 'production') {
+                console.log(`Huvudsida: http://localhost:${PORT}`);
+                console.log(`Admin-panel: http://localhost:${PORT}/admin`);
+            }
+        });
+    } catch (error) {
+        console.error('Fel vid serverstart:', error);
+        process.exit(1);
     }
-});
+};
+
+startServer();
