@@ -16,24 +16,11 @@ const { pool, initializeDatabase, testConnection } = require('./config/database'
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialisera databas endast om DATABASE_URL finns
-const initDB = async () => {
-    if (process.env.DATABASE_URL) {
-        try {
-            await initializeDatabase();
-            console.log('✅ Databas initialiserad');
-        } catch (error) {
-            console.error('❌ Databas initialiseringsfel:', error);
-            if (process.env.NODE_ENV === 'production') {
-                throw error;
-            }
-        }
-    } else {
-        console.log('⚠️  Ingen DATABASE_URL - hoppar över databas initialisering');
-    }
-};
-
-initDB().catch(console.error);
+// Initialisera databas - krävs för att servern ska fungera
+initializeDatabase().catch((error) => {
+    console.error('❌ Databasfel - servern kan inte starta:', error);
+    process.exit(1);
+});
 
 // Multer konfiguration för filuppladdning
 const storage = multer.diskStorage({
@@ -113,14 +100,6 @@ app.get('/admin', (req, res) => {
 
 // API för att hämta profildata
 app.get('/api/profile', async (req, res) => {
-    // Fallback om ingen databas finns
-    if (!process.env.DATABASE_URL) {
-        return res.json({
-            profile: { name: 'Ägare', profile_image: null },
-            social_links: []
-        });
-    }
-
     try {
         const userResult = await pool.query("SELECT name, profile_image FROM users WHERE id = 1");
         const user = userResult.rows[0];
@@ -134,11 +113,7 @@ app.get('/api/profile', async (req, res) => {
         });
     } catch (error) {
         console.error('Databasfel:', error);
-        // Fallback vid databasfel
-        res.json({
-            profile: { name: 'Ägare', profile_image: null },
-            social_links: []
-        });
+        res.status(500).json({ error: 'Databasfel' });
     }
 });
 
@@ -150,25 +125,6 @@ app.post('/api/login', [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
-    }
-
-    // Om ingen databas finns, använd demo-inloggning
-    if (!process.env.DATABASE_URL) {
-        const { username, password } = req.body;
-        
-        if (username === 'admin' && password === 'admin123') {
-            req.session.user = { id: 1, username: 'admin' };
-            req.session.save((err) => {
-                if (err) {
-                    console.error('Session save error:', err);
-                    return res.status(500).json({ error: 'Session kunde inte sparas' });
-                }
-                res.json({ success: true, message: 'Demo inloggning lyckades' });
-            });
-        } else {
-            res.status(401).json({ error: 'Demo: Använd admin / admin123' });
-        }
-        return;
     }
 
     const { username, password } = req.body;
@@ -184,10 +140,10 @@ app.post('/api/login', [
         const passwordMatch = await bcrypt.compare(password, user.password);
         
         if (passwordMatch) {
-            console.log('Password match, creating session for user:', user.username); // Debug
+            console.log('Password match, creating session for user:', user.username);
             req.session.user = { id: user.id, username: user.username };
-            console.log('Session created, session ID:', req.sessionID); // Debug
-            console.log('Session user after creation:', req.session.user); // Debug
+            console.log('Session created, session ID:', req.sessionID);
+            console.log('Session user after creation:', req.session.user);
             
             // Force session save
             req.session.save((err) => {
@@ -195,7 +151,7 @@ app.post('/api/login', [
                     console.error('Session save error:', err);
                     return res.status(500).json({ error: 'Session kunde inte sparas' });
                 }
-                console.log('Session saved successfully'); // Debug
+                console.log('Session saved successfully');
                 res.json({ success: true, message: 'Inloggning lyckades' });
             });
         } else {
@@ -213,8 +169,7 @@ app.get('/api/session-status', (req, res) => {
     res.json({ 
         authenticated: !!req.session.user,
         user: req.session.user || null,
-        sessionID: req.sessionID,
-        demo_mode: !process.env.DATABASE_URL // Lägg till demo-läge flagga
+        sessionID: req.sessionID
     });
 });
 
@@ -230,18 +185,13 @@ app.post('/api/logout', (req, res) => {
 
 // API för att hämta admin-data
 app.get('/api/admin/profile', requireAuth, async (req, res) => {
-    // Fallback om ingen databas finns
-    if (!process.env.DATABASE_URL) {
-        return res.json({ name: 'Demo Ägare', profile_image: null });
-    }
-
     try {
         const result = await pool.query("SELECT name, profile_image FROM users WHERE id = $1", [req.session.user.id]);
         const user = result.rows[0];
         res.json(user || { name: 'Ägare', profile_image: null });
     } catch (error) {
         console.error('Databasfel:', error);
-        res.json({ name: 'Ägare', profile_image: null });
+        res.status(500).json({ error: 'Databasfel' });
     }
 });
 
@@ -252,11 +202,6 @@ app.post('/api/admin/profile', requireAuth, upload.single('profile_image'), [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
-    }
-
-    // Fallback om ingen databas finns
-    if (!process.env.DATABASE_URL) {
-        return res.status(503).json({ error: 'Demo-läge: Databas krävs för att spara ändringar. Konfigurera DATABASE_URL.' });
     }
 
     const { name } = req.body;
@@ -286,17 +231,12 @@ app.post('/api/admin/profile', requireAuth, upload.single('profile_image'), [
 
 // API för att hämta sociala medielänkar för admin
 app.get('/api/admin/social-links', requireAuth, async (req, res) => {
-    // Fallback om ingen databas finns
-    if (!process.env.DATABASE_URL) {
-        return res.json([]);
-    }
-
     try {
         const result = await pool.query("SELECT * FROM social_links ORDER BY display_order");
         res.json(result.rows);
     } catch (error) {
         console.error('Databasfel:', error);
-        res.json([]);
+        res.status(500).json({ error: 'Databasfel' });
     }
 });
 
@@ -309,11 +249,6 @@ app.post('/api/admin/social-links', requireAuth, [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
-    }
-
-    // Fallback om ingen databas finns
-    if (!process.env.DATABASE_URL) {
-        return res.status(503).json({ error: 'Demo-läge: Databas krävs för att spara ändringar. Konfigurera DATABASE_URL.' });
     }
 
     const { platform, url, icon_class, display_order = 0 } = req.body;
@@ -385,6 +320,10 @@ app.post('/api/admin/change-password', requireAuth, [
         const result = await pool.query("SELECT password FROM users WHERE id = $1", [req.session.user.id]);
         const user = result.rows[0];
 
+        if (!user) {
+            return res.status(404).json({ error: 'Användare hittades inte' });
+        }
+
         const passwordMatch = await bcrypt.compare(currentPassword, user.password);
         
         if (!passwordMatch) {
@@ -404,55 +343,34 @@ app.post('/api/admin/change-password', requireAuth, [
 // Starta servern
 const startServer = async () => {
     try {
-        // För Render - endast testa anslutning om DATABASE_URL finns
-        if (process.env.DATABASE_URL) {
-            console.log('DATABASE_URL hittad, testar PostgreSQL-anslutning...');
-            const connected = await testConnection();
-            if (!connected) {
-                console.error('⚠️  Varning: Kunde inte ansluta till PostgreSQL. Kontrollera DATABASE_URL.');
-                console.log('💡 Skapa en PostgreSQL-databas i Render Dashboard först!');
-                
-                // I produktion, avsluta om ingen databas
-                if (process.env.NODE_ENV === 'production') {
-                    console.error('🚫 Servern kan inte starta utan databas i produktion.');
-                    process.exit(1);
-                }
-            } else {
-                console.log('✅ PostgreSQL anslutning lyckades');
-            }
-        } else {
-            console.log('⚠️  Ingen DATABASE_URL hittad. Kör utan databas för tillfället.');
-            console.log('💡 Lägg till DATABASE_URL i environment variables för att aktivera databas.');
+        // Testa databasanslutning - krävs för att servern ska fungera
+        console.log('Testar PostgreSQL-anslutning...');
+        const connected = await testConnection();
+        
+        if (!connected) {
+            console.error('❌ Kunde inte ansluta till PostgreSQL databas!');
+            console.error('💡 Kontrollera att DATABASE_URL är korrekt konfigurerad.');
+            console.error('� För Render: Skapa PostgreSQL service och länka DATABASE_URL');
+            process.exit(1);
         }
+
+        console.log('✅ PostgreSQL anslutning lyckades');
 
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`🚀 Server körs på port ${PORT}`);
             console.log(`🌍 Miljö: ${process.env.NODE_ENV || 'development'}`);
-            
-            if (process.env.DATABASE_URL) {
-                console.log('🗄️  PostgreSQL databas ansluten');
-            } else {
-                console.log('⚠️  Kör utan databas - lägg till DATABASE_URL');
-            }
+            console.log('🗄️  PostgreSQL databas ansluten och funktionell');
             
             if (process.env.NODE_ENV !== 'production') {
                 console.log(`🏠 Huvudsida: http://localhost:${PORT}`);
                 console.log(`🔐 Admin-panel: http://localhost:${PORT}/admin`);
+                console.log('👤 Standard inlogg: admin / admin123');
             }
         });
     } catch (error) {
         console.error('❌ Fel vid serverstart:', error);
-        
-        // I development, försök starta ändå
-        if (process.env.NODE_ENV !== 'production') {
-            console.log('🔄 Försöker starta servern utan databas (development mode)...');
-            app.listen(PORT, '0.0.0.0', () => {
-                console.log(`⚠️  Server körs på port ${PORT} UTAN DATABAS`);
-                console.log('💡 Konfigurera DATABASE_URL för full funktionalitet');
-            });
-        } else {
-            process.exit(1);
-        }
+        console.error('� Servern kan inte starta utan fungerande databas');
+        process.exit(1);
     }
 };
 
