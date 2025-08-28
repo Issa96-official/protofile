@@ -26,11 +26,11 @@ function initializeTheme() {
         if (theme === 'dark') {
             document.body.classList.add('dark-mode');
             themeIcon.className = 'fas fa-sun';
-            themeText.textContent = 'Ljust tema';
+            themeText.textContent = 'الوضع النهاري';
         } else {
             document.body.classList.remove('dark-mode');
             themeIcon.className = 'fas fa-moon';
-            themeText.textContent = 'Mörkt tema';
+            themeText.textContent = 'الوضع الليلي';
         }
     }
 }
@@ -43,7 +43,7 @@ async function loadProfile() {
         const response = await fetch('/api/profile');
         
         if (!response.ok) {
-            throw new Error('Fel vid hämtning av profildata');
+            throw new Error('حدث خطأ أثناء جلب بيانات الملف الشخصي');
         }
         
         const data = await response.json();

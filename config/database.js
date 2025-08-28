@@ -29,7 +29,7 @@ const pool = new Pool({
 // Skapa tabeller om de inte finns
 const initializeDatabase = async () => {
     try {
-        console.log('Initialiserar PostgreSQL databas...');
+    console.log('جاري تهيئة قاعدة بيانات PostgreSQL...');
         
         // Skapa användartabell
         await pool.query(`
@@ -56,12 +56,12 @@ const initializeDatabase = async () => {
             )
         `);
 
-        console.log('Databastabeller skapade/kontrollerade');
+    console.log('تم إنشاء/التحقق من جداول قاعدة البيانات');
         
         // Kontrollera om standardanvändare finns
         const userCheck = await pool.query('SELECT COUNT(*) as count FROM users');
         if (parseInt(userCheck.rows[0].count) === 0) {
-            console.log('Skapar standardanvändare...');
+            console.log('جاري إنشاء المستخدم الافتراضي...');
             
             const bcrypt = require('bcryptjs');
             const defaultPassword = 'admin123';
@@ -72,15 +72,15 @@ const initializeDatabase = async () => {
                 ['admin', hashedPassword, 'Ägare']
             );
             
-            console.log('Standardanvändare skapad: admin / admin123');
+            console.log('تم إنشاء المستخدم الافتراضي: admin / admin123');
         } else {
-            console.log('Standardanvändare finns redan');
+            console.log('المستخدم الافتراضي موجود بالفعل');
         }
         
-        console.log('Databasinitialiseringen klar!');
+    console.log('اكتملت تهيئة قاعدة البيانات!');
         
     } catch (error) {
-        console.error('Fel vid databasinitialiseringen:', error);
+    console.error('حدث خطأ أثناء تهيئة قاعدة البيانات:', error);
         throw error;
     }
 };
@@ -89,11 +89,11 @@ const initializeDatabase = async () => {
 const testConnection = async () => {
     try {
         const client = await pool.connect();
-        console.log('PostgreSQL anslutning lyckades');
+    console.log('تم الاتصال بقاعدة بيانات PostgreSQL بنجاح');
         client.release();
         return true;
     } catch (error) {
-        console.error('PostgreSQL anslutningsfel:', error);
+    console.error('خطأ في الاتصال بقاعدة بيانات PostgreSQL:', error);
         return false;
     }
 };

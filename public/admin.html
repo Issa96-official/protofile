@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,20 +11,20 @@
     <!-- Dark mode toggle -->
     <button class="theme-toggle" id="theme-toggle">
         <i class="fas fa-moon" id="theme-icon"></i>
-        <span id="theme-text">Mörkt tema</span>
+    <span id="theme-text">الوضع الليلي</span>
     </button>
 
     <div class="admin-container">
         <!-- Sidhuvud -->
         <header class="admin-header">
             <div class="header-content">
-                <h1><i class="fas fa-cog"></i> Admin Panel</h1>
+                <h1><i class="fas fa-cog"></i> لوحة الإدارة</h1>
                 <div class="header-actions">
                     <a href="/" class="btn btn-secondary" target="_blank">
-                        <i class="fas fa-external-link-alt"></i> Visa hemsida
+                        <i class="fas fa-external-link-alt"></i> عرض الموقع
                     </a>
                     <button id="logout-btn" class="btn btn-danger">
-                        <i class="fas fa-sign-out-alt"></i> Logga ut
+                        <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
                     </button>
                 </div>
             </div>
@@ -35,13 +35,13 @@
             <!-- Navigeringsflikar -->
             <nav class="admin-tabs">
                 <button class="tab-btn active" data-tab="profile">
-                    <i class="fas fa-user"></i> Profil
+                    <i class="fas fa-user"></i> الملف الشخصي
                 </button>
                 <button class="tab-btn" data-tab="social-links">
-                    <i class="fas fa-link"></i> Sociala Medier
+                    <i class="fas fa-link"></i> وسائل التواصل
                 </button>
                 <button class="tab-btn" data-tab="settings">
-                    <i class="fas fa-cog"></i> Inställningar
+                    <i class="fas fa-cog"></i> الإعدادات
                 </button>
             </nav>
 
@@ -49,12 +49,12 @@
             <div id="profile-tab" class="tab-content active">
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-user"></i> Redigera Profil</h2>
+                        <h2><i class="fas fa-user"></i> تعديل الملف الشخصي</h2>
                     </div>
                     <div class="card-body">
                         <form id="profile-form" class="form">
                             <div class="form-group">
-                                <label for="profile-name">Namn</label>
+                                <label for="profile-name">الاسم</label>
                                 <input type="text" id="profile-name" name="name" required>
                             </div>
 
@@ -85,19 +85,19 @@
                 </div>
             </div>
 
-            <!-- Sociala medier-flik -->
+            <!-- قسم وسائل التواصل الاجتماعي -->
             <div id="social-links-tab" class="tab-content">
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-link"></i> Hantera Sociala Medielänkar</h2>
+                        <h2><i class="fas fa-link"></i> إدارة روابط التواصل الاجتماعي</h2>
                         <button id="add-link-btn" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Lägg till länk
+                            <i class="fas fa-plus"></i> إضافة رابط
                         </button>
                     </div>
                     <div class="card-body">
-                        <!-- Lista över sociala medielänkar -->
+                        <!-- قائمة روابط التواصل الاجتماعي -->
                         <div id="social-links-list" class="social-links-list">
-                            <!-- Läses in dynamiskt -->
+                            <!-- يتم التحميل ديناميكياً -->
                         </div>
                     </div>
                 </div>
@@ -146,7 +146,7 @@
     <div id="social-link-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modal-title">Lägg till Social Medielänk</h3>
+                <h3 id="modal-title">إضافة رابط تواصل اجتماعي</h3>
                 <button class="modal-close" id="close-modal">
                     <i class="fas fa-times"></i>
                 </button>
@@ -156,7 +156,7 @@
                     <input type="hidden" id="link-id" name="id">
                     
                     <div class="form-group">
-                        <label for="platform">Plattform</label>
+                        <label for="platform">اضف منصه</label>
                         <select id="platform" name="platform" required>
                             <option value="">Välj plattform</option>
                             <option value="Facebook">Facebook</option>
@@ -199,7 +199,7 @@
                     <div class="modal-actions">
                         <button type="button" class="btn btn-secondary" id="cancel-modal">Avbryt</button>
                         <button type="submit" class="btn btn-primary" id="save-link-btn">
-                            <span class="btn-text">Spara</span>
+                            <span class="btn-text">إضافة</span>
                             <span class="btn-spinner" style="display: none;">
                                 <i class="fas fa-spinner fa-spin"></i>
                             </span>

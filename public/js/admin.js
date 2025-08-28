@@ -33,11 +33,11 @@ function initializeTheme() {
         if (theme === 'dark') {
             document.body.classList.add('dark-mode');
             themeIcon.className = 'fas fa-sun';
-            themeText.textContent = 'Ljust tema';
+            themeText.textContent = 'الوضع النهاري';
         } else {
             document.body.classList.remove('dark-mode');
             themeIcon.className = 'fas fa-moon';
-            themeText.textContent = 'Mörkt tema';
+            themeText.textContent = 'الوضع الليلي';
         }
     }
 }
@@ -51,11 +51,11 @@ function initializeTabs() {
         btn.addEventListener('click', function() {
             const tabId = this.dataset.tab;
             
-            // Ta bort aktiv klass från alla flikar
+            // إزالة الفئة النشطة من جميع علامات التبويب
             tabBtns.forEach(b => b.classList.remove('active'));
             tabContents.forEach(c => c.classList.remove('active'));
             
-            // Lägg till aktiv klass till aktuell flik
+            // إضافة الفئة النشطة إلى علامة التبويب الحالية
             this.classList.add('active');
             document.getElementById(tabId + '-tab').classList.add('active');
         });
