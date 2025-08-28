@@ -21,7 +21,10 @@ const getDatabaseConfig = () => {
     };
 };
 
-const pool = new Pool(getDatabaseConfig());
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+});
 
 // Skapa tabeller om de inte finns
 const initializeDatabase = async () => {
