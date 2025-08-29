@@ -14,14 +14,33 @@
     <span id="theme-text">الوضع الليلي</span>
     </button>
 
+
     <div class="container">
         <div class="profile-card">
+            <!-- Logotypsektion -->
+            <div class="logo-section">
+                <img id="profile-logo" src="/img/logo-placeholder.png" alt="Logotyp" class="profile-logo">
+            </div>
+
+            <!-- Blå vågig rad -->
+            <div class="wave-divider">
+                <svg viewBox="0 0 500 50" preserveAspectRatio="none" class="wave-svg">
+                    <path d="M0,30 Q250,60 500,30 L500,50 L0,50 Z" fill="#667eea" />
+                </svg>
+            </div>
+
             <!-- Profilsektion -->
             <div class="profile-section">
                 <div class="profile-image-container">
-                    <img id="profile-image" src="https://via.placeholder.com/150x150/667eea/ffffff?text=Profil" alt="Profilbild" class="profile-image">
+                    <img id="profile-image" src="/img/profile-placeholder.png" alt="Profilbild" class="profile-image">
                 </div>
-                <h1 id="profile-name" class="profile-name">جاري التحميل...</h1>
+                <div class="profile-info">
+                    <h1 id="profile-name" class="profile-name">جاري التحميل...</h1>
+                    <div class="profile-description-row">
+                        <span id="profile-desc-label" class="profile-desc-label">الوصف:</span>
+                        <span id="profile-description" class="profile-description">...</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Sociala medielänkar -->

@@ -101,14 +101,17 @@ app.get('/admin', (req, res) => {
 // API för att hämta profildata
 app.get('/api/profile', async (req, res) => {
     try {
-        const userResult = await pool.query("SELECT name, profile_image FROM users WHERE id = 1");
+        const userResult = await pool.query("SELECT name, profile_image, logo, description FROM users WHERE id = 1");
         const user = userResult.rows[0];
-        
         const linksResult = await pool.query("SELECT * FROM social_links WHERE is_active = true ORDER BY display_order");
         const links = linksResult.rows;
-        
         res.json({
-            profile: user || { name: 'Ägare', profile_image: null },
+            profile: {
+                name: user?.name || 'Ägare',
+                profile_image: user?.profile_image || '',
+                logo: user?.logo || '',
+                description: user?.description || ''
+            },
             social_links: links
         });
     } catch (error) {
@@ -186,9 +189,9 @@ app.post('/api/logout', (req, res) => {
 // API för att hämta admin-data
 app.get('/api/admin/profile', requireAuth, async (req, res) => {
     try {
-        const result = await pool.query("SELECT name, profile_image FROM users WHERE id = $1", [req.session.user.id]);
+        const result = await pool.query("SELECT name, profile_image, description FROM users WHERE id = $1", [req.session.user.id]);
         const user = result.rows[0];
-        res.json(user || { name: 'Ägare', profile_image: null });
+        res.json(user || { name: 'Ägare', profile_image: null, description: '' });
     } catch (error) {
         console.error('Databasfel:', error);
         res.status(500).json({ error: 'Databasfel' });
@@ -196,30 +199,46 @@ app.get('/api/admin/profile', requireAuth, async (req, res) => {
 });
 
 // API för att uppdatera profil
-app.post('/api/admin/profile', requireAuth, upload.single('profile_image'), [
-    body('name').notEmpty().withMessage('Namn krävs').isLength({ max: 100 }).withMessage('Namn får vara max 100 tecken')
+
+app.post('/api/admin/profile', requireAuth, upload.fields([
+    { name: 'profile_image', maxCount: 1 },
+    { name: 'logo', maxCount: 1 }
+]), [
+    body('name').notEmpty().withMessage('Namn krävs').isLength({ max: 100 }).withMessage('Namn får vara max 100 tecken'),
+    body('description').optional().isLength({ max: 255 }).withMessage('Beskrivning max 255 tecken')
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name } = req.body;
+    const { name, description } = req.body;
     let profileImage = null;
+    let logoImage = null;
 
-    if (req.file) {
-        profileImage = '/uploads/' + req.file.filename;
+    if (req.files && req.files['profile_image']) {
+        profileImage = '/uploads/' + req.files['profile_image'][0].filename;
+    }
+    if (req.files && req.files['logo']) {
+        logoImage = '/uploads/' + req.files['logo'][0].filename;
     }
 
     try {
-        let query, params;
+        let query = 'UPDATE users SET name = $1, description = $2';
+        let params = [name, description];
+        let paramIndex = 3;
         if (profileImage) {
-            query = "UPDATE users SET name = $1, profile_image = $2 WHERE id = $3";
-            params = [name, profileImage, req.session.user.id];
-        } else {
-            query = "UPDATE users SET name = $1 WHERE id = $2";
-            params = [name, req.session.user.id];
+            query += `, profile_image = $${paramIndex}`;
+            params.push(profileImage);
+            paramIndex++;
         }
+        if (logoImage) {
+            query += `, logo = $${paramIndex}`;
+            params.push(logoImage);
+            paramIndex++;
+        }
+        query += ' WHERE id = $' + paramIndex;
+        params.push(req.session.user.id);
 
         await pool.query(query, params);
         res.json({ success: true, message: 'Profil uppdaterad' });

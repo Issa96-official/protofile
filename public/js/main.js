@@ -1,92 +1,93 @@
+// Tema-hantering
+function initializeTheme() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const themeText = document.getElementById('theme-text');
+    const savedTheme = localStorage.getItem('theme') || 'light';
+
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+            if (themeIcon) themeIcon.className = 'fas fa-sun';
+            if (themeText) themeText.textContent = 'الوضع النهاري';
+        } else {
+            document.body.classList.remove('dark-mode');
+            if (themeIcon) themeIcon.className = 'fas fa-moon';
+            if (themeText) themeText.textContent = 'الوضع الليلي';
+        }
+    }
+
+    applyTheme(savedTheme);
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            const currentTheme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyTheme(newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+    }
+}
+// ...existing code...
 // Huvudsidans JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     initializeTheme();
     loadProfile();
 });
 
-// Theme management
-function initializeTheme() {
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeIcon = document.getElementById('theme-icon');
-    const themeText = document.getElementById('theme-text');
-    
-    // Läs sparad tema från localStorage
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    applyTheme(savedTheme);
-    
-    themeToggle.addEventListener('click', function() {
-        const currentTheme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        
-        applyTheme(newTheme);
-        localStorage.setItem('theme', newTheme);
-    });
-    
-    function applyTheme(theme) {
-        if (theme === 'dark') {
-            document.body.classList.add('dark-mode');
-            themeIcon.className = 'fas fa-sun';
-            themeText.textContent = 'الوضع النهاري';
-        } else {
-            document.body.classList.remove('dark-mode');
-            themeIcon.className = 'fas fa-moon';
-            themeText.textContent = 'الوضع الليلي';
-        }
-    }
-}
-
 async function loadProfile() {
     const loadingElement = document.getElementById('loading');
     const errorElement = document.getElementById('error-message');
-    
     try {
         const response = await fetch('/api/profile');
-        
-        if (!response.ok) {
-            throw new Error('حدث خطأ أثناء جلب بيانات الملف الشخصي');
-        }
-        
+        if (!response.ok) throw new Error('Kunde inte hämta profil');
         const data = await response.json();
-        
+
+        // Uppdatera logotyp
+        const logoElement = document.getElementById('profile-logo');
+        if (logoElement) {
+            logoElement.src = data.profile.logo && data.profile.logo !== '' ? data.profile.logo : '/img/logo-placeholder.png';
+            logoElement.alt = `${data.profile.name || 'Profil'} logotyp`;
+        }
+
         // Uppdatera profil
-        updateProfile(data.profile);
-        
+        updateProfile({
+            ...data.profile,
+            profile_image: data.profile.profile_image && data.profile.profile_image !== '' ? data.profile.profile_image : '/img/profile-placeholder.png'
+        });
+
         // Uppdatera sociala medielänkar
         updateSocialLinks(data.social_links);
-        
+
         // Dölj laddning
-        if (loadingElement) {
-            loadingElement.style.display = 'none';
-        }
-        
+        if (loadingElement) loadingElement.style.display = 'none';
     } catch (error) {
         console.error('Fel vid laddning av profil:', error);
-        
-        // Visa felmeddelande
-        if (errorElement) {
-            errorElement.style.display = 'block';
-        }
-        
-        // Dölj laddning
-        if (loadingElement) {
-            loadingElement.style.display = 'none';
-        }
+        if (errorElement) errorElement.style.display = 'block';
+        if (loadingElement) loadingElement.style.display = 'none';
     }
 }
+// ...existing code...
 
 function updateProfile(profile) {
     const nameElement = document.getElementById('profile-name');
     const imageElement = document.getElementById('profile-image');
-    
+    const descElement = document.getElementById('profile-description');
+
     if (nameElement && profile.name) {
         nameElement.textContent = profile.name;
     }
-    
-    if (imageElement && profile.profile_image) {
+
+    if (imageElement) {
         imageElement.src = profile.profile_image;
         imageElement.alt = `${profile.name || 'Profil'}s bild`;
     }
+
+    if (descElement) {
+        descElement.textContent = profile.description || '';
+    }
 }
+// ...existing code...
 
 function updateSocialLinks(links) {
     const container = document.getElementById('social-links');
@@ -120,7 +121,7 @@ function updateSocialLinks(links) {
             const color = getPlatformColor(link.platform);
             if (color) {
                 this.style.borderColor = color;
-            }
+}
         });
         
         linkElement.addEventListener('mouseleave', function() {
@@ -200,33 +201,27 @@ function addVisualEffects() {
             }, 600);
         });
     });
-}
-
-// CSS för ripple-effekt
-const style = document.createElement('style');
-style.textContent = `
-    .social-link {
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .ripple {
-        position: absolute;
-        background: rgba(255, 255, 255, 0.6);
-        border-radius: 50%;
-        transform: scale(0);
-        animation: ripple-animation 0.6s linear;
-        pointer-events: none;
-    }
-    
-    @keyframes ripple-animation {
-        to {
-            transform: scale(4);
-            opacity: 0;
+    // CSS för ripple-effekt
+    const style = document.createElement('style');
+    style.textContent = `
+        .social-link {
+            position: relative;
+            overflow: hidden;
         }
-    }
-`;
-document.head.appendChild(style);
-
-// Kör visuella effekter när sidan laddats
-window.addEventListener('load', addVisualEffects);
+        .ripple {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+            pointer-events: none;
+        }
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
