@@ -89,7 +89,52 @@ function initializeModals() {
 // Formulär
 function initializeForms() {
     // Profilformulär
-    document.getElementById('profile-form').addEventListener('submit', handleProfileUpdate);
+    const profileForm = document.getElementById('profile-form');
+    if (profileForm) {
+        profileForm.innerHTML = `
+            <div class="form-group">
+                <label for="name">Namn</label>
+                <input type="text" id="name" name="name" required maxlength="100">
+            </div>
+            <div class="form-group">
+                <label for="description">Beskrivning</label>
+                <input type="text" id="description" name="description" maxlength="255">
+            </div>
+            <div class="form-group">
+                <label for="profile-image-input">Profilbild</label>
+                <div class="image-upload-container">
+                    <div class="current-image">
+                        <img id="current-profile-image" src="/img/profile-placeholder.png" alt="Nuvarande profilbild" style="max-width:100px; border-radius:50%;">
+                    </div>
+                    <input type="file" id="profile-image-input" name="profile_image" accept="image/*">
+                    <label for="profile-image-input" class="file-upload-btn btn btn-info">
+                        <i class="fas fa-upload"></i> Ladda upp ny profilbild
+                    </label>
+                    <div id="profile-image-preview" style="margin-top:10px;"></div>
+                </div>
+                <small class="form-help">Max 5MB. Format: JPG, PNG, GIF</small>
+            </div>
+            <div class="form-group">
+                <label for="logo-input">Logotyp</label>
+                <div class="image-upload-container">
+                    <div class="current-image">
+                        <img id="current-logo-image" src="/img/logo-placeholder.png" alt="Nuvarande logotyp" style="max-width:200px;">
+                    </div>
+                    <input type="file" id="logo-input" name="logo" accept="image/*">
+                    <label for="logo-input" class="file-upload-btn btn btn-info">
+                        <i class="fas fa-upload"></i> Ladda upp ny logotyp
+                    </label>
+                    <div id="logo-image-preview" style="margin-top:10px;"></div>
+                </div>
+                <small class="form-help">Max 5MB. Format: JPG, PNG, GIF</small>
+            </div>
+            <button type="submit" id="save-profile-btn" class="btn btn-primary">
+                <span class="btn-text">Spara</span>
+                <span class="btn-spinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
+            </button>
+        `;
+        profileForm.addEventListener('submit', handleProfileUpdate);
+    }
     
     // Social länk-formulär
     document.getElementById('social-link-form').addEventListener('submit', handleSocialLinkSave);
@@ -116,15 +161,10 @@ async function loadProfileData() {
     try {
         const response = await fetch('/api/admin/profile');
         if (!response.ok) throw new Error('Fel vid hämtning av profildata');
-        
         const profile = await response.json();
-        
-        document.getElementById('profile-name').value = profile.name || '';
-        
-        if (profile.profile_image) {
-            document.getElementById('current-profile-image').src = profile.profile_image;
-        }
-        
+        document.getElementById('name').value = profile.name || '';
+        document.getElementById('description').value = profile.description || '';
+        // Profilbild och logotyp visas inte direkt, men kan laddas upp
     } catch (error) {
         console.error('Fel vid laddning av profildata:', error);
         showNotification('Fel vid laddning av profildata', 'error');
