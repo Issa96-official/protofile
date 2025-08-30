@@ -127,8 +127,8 @@ body.dark-mode::before {
     flex-direction: row;
     align-items: flex-start;
     gap: 24px;
-    margin-top: 0;
-    margin-bottom: 24px;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 .profile-image-container {
     flex: 0 0 auto;
